@@ -1,4 +1,4 @@
-import { handleGLLMRequest } from './handlers/gllm';
+import {proxyRequest} from './handlers/proxy';
 
 interface Env {
     OAUTH_STORE: KVNamespace;
@@ -21,7 +21,7 @@ export default {
 
         // CORS 预检请求处理
         if (request.method === "OPTIONS") {
-            return this.handleCorsPreflightRequest();
+            return this.handleCorsPreflightRequest(request);
         }
 
         switch (url.pathname) {
@@ -33,20 +33,43 @@ export default {
                 return this.handleRefresh(url, env);
             default:
                 if(url.pathname.startsWith("/gllm")){
-                    return handleGLLMRequest(request, env);
+                    return this.handleGLLMRequest(request, env);
+                }else if(url.pathname.startsWith("/notion-api")){
+                    return this.handleNotionRequest(request, env);
                 }
                 return new Response("Not found", { status: 404 });
         }
     },
 
-    handleCorsPreflightRequest(): Response {
+    handleCorsPreflightRequest(request: Request): Response {
+        const requestHeaders = 
+            request.headers.get('Access-Control-Request-Headers') || 'Content-Type, Authorization';
+        
         return new Response(null, {
             headers: {
                 "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type",
+                "Access-Control-Allow-Methods": "GET, POST, HEAD, PUT, PATCH, DELETE, OPTIONS",
+                "Access-Control-Allow-Headers": requestHeaders,
             },
         });
+    },
+
+    async handleGLLMRequest(request: Request, _env: Env): Promise<Response> {
+        const url = new URL(request.url);
+        const targetUrl = 'https://generativelanguage.googleapis.com' 
+                            + url.pathname.replace('/gllm', '') + url.search;
+    
+        return proxyRequest(request,targetUrl, "Failed to proxy GLLM request");
+    },
+
+    async handleNotionRequest(request: Request, _env: Env): Promise<Response> {
+        const url = new URL(request.url);
+        const targetUrl = 'https://api.notion.com' 
+                            + url.pathname.replace('/notion-api', '') + url.search;
+    
+        const response = await proxyRequest(request,targetUrl, "Failed to proxy Notion api request");
+        response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Notion-Version');
+        return response;
     },
 
     async handleAuthorize(url: URL, env: Env): Promise<Response> {
