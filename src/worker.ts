@@ -1,3 +1,5 @@
+import { handleGLLMRequest } from './handlers/gllm';
+
 interface Env {
     OAUTH_STORE: KVNamespace;
     BDPAN_APP_KEY: string;
@@ -30,6 +32,9 @@ export default {
             case "/oauth/refresh":
                 return this.handleRefresh(url, env);
             default:
+                if(url.pathname.startsWith("/gllm")){
+                    return handleGLLMRequest(request, env);
+                }
                 return new Response("Not found", { status: 404 });
         }
     },

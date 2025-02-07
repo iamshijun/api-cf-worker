@@ -28,4 +28,4 @@ jobs:
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          command: publish
+          command: publish #因为项目用的是 wrangler2 默认使用deploy,但是v3这里是publish
