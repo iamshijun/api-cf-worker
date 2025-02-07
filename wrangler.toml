@@ -1,0 +1,18 @@
+name = "api-worker"
+main = "src/worker.ts"
+compatibility_date = "2023-02-06"
+account_id = "98bf0ea109e2716bbaa26317ecdd8c70"
+
+kv_namespaces = [
+  { binding = "OAUTH_STORE", id = "d01dc81d05134974a18a03129e7c5470", preview_id = "c601ff5be7ea40ff9a7ae183a0f621cd"}, 
+]
+
+
+[[routes]]  
+pattern = "api.asitanokibou.site"
+custom_domain = true
+zone_id = "578ea85456cdce1b241ad8584a088313"
+
+
+[vars]
+BDPAN_REDIRECT_URI = "https://v.asitanokibou.site/yunpan/authorized"

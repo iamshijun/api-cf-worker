@@ -1,0 +1,19 @@
+{
+  "name": "api-worker",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "start": "wrangler dev",
+    "deploy": "wrangler publish"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250204.0",
+    "typescript": "~5.7.2",
+    "vite": "^6.1.0",
+    "wrangler": "^2.21.2"
+  }
+}
