@@ -21,16 +21,11 @@ export function creastreteStreamProcessor(
         const { body } = response;
         if (!body) {
             throw new Error("Response body is null");
-        }
-
-        const context = new SSEStreamContext()
+        } 
 
         const newBody = body
             .pipeThrough(new TextDecoderStream())
-            .pipeThrough(new TransformStream<string, string>({
-                transform: context.parseStream,
-                flush: context.parseStreamFlush,
-            }));
+            .pipeThrough(new SSEDecoderStream());
 
         // 如果提供了转换函数，则应用转换
         let processedBody = newBody
@@ -60,9 +55,19 @@ export function creastreteStreamProcessor(
     };
 }
 
-class SSEStreamContext {
+class SSEDecoderStream extends TransformStream<string, string>{
     buffer: string = '';
 
+    constructor(){
+        super({
+            transform: (chunk, controller) => {
+                this.parseStream(chunk, controller);
+            },
+            flush: (controller) => {
+                this.parseStreamFlush(controller);
+            },
+        })
+    }
     parseStream(
         chunk: string,
         controller: TransformStreamDefaultController<string>
