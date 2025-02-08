@@ -1,7 +1,17 @@
 name = "api-worker"
 main = "src/worker.ts"
-compatibility_date = "2023-02-06"
+compatibility_date = "2025-02-07"
 account_id = "98bf0ea109e2716bbaa26317ecdd8c70"
+
+[annotations]
+version = "1.0.0"
+last_updated = "2025-02-07"
+changes = """
+- 添加Notion API 代理功能
+- 添加 GLLM API 代理功能
+- 优化请求代理逻辑
+- 添加通用代理处理模块
+"""
 
 kv_namespaces = [
   { binding = "OAUTH_STORE", id = "d01dc81d05134974a18a03129e7c5470", preview_id = "c601ff5be7ea40ff9a7ae183a0f621cd"}, 

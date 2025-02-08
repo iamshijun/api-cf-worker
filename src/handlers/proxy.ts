@@ -1,3 +1,4 @@
+import { creastreteStreamProcessor, isEventStream } from "../utils/stream";
 
 
 export async function proxyRequest(request: Request, targetUrl: string, 
@@ -15,18 +16,13 @@ export async function proxyRequest(request: Request, targetUrl: string,
 
         const response = await fetch(newRequest);
 
-        // 创建新的响应
-        const responseHeaders = new Headers(response.headers);
-        if (!responseHeaders.has('Access-Control-Allow-Origin')) {//保证不会设置多个Access-Control-Allow-Origin
-            responseHeaders.set('Access-Control-Allow-Origin', '*');
+        if(isEventStream(response)){
+            const processor = creastreteStreamProcessor();
+            const streamResponse = processor(response);
+            return fixCors(streamResponse); 
+        }else{
+            return fixCors(response); 
         }
-
-        const newResponse = new Response(response.body, {
-            status: response.status,
-            statusText: response.statusText,
-            headers: responseHeaders
-        });
-        return newResponse;
     } catch (error: any) {
         if(typeof errorHandler === "function"){
             return errorHandler?.(error);
@@ -47,4 +43,17 @@ export async function proxyRequest(request: Request, targetUrl: string,
  
         }
     }
+}
+
+function fixCors(response: Response) {
+    const responseHeaders = new Headers(response.headers);
+    if (!responseHeaders.has('Access-Control-Allow-Origin')) { //保证不会设置多个Access-Control-Allow-Origin
+        responseHeaders.set('Access-Control-Allow-Origin', '*');
+    }
+ 
+    return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: responseHeaders
+    });;
 }
