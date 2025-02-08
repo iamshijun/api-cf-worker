@@ -36,6 +36,8 @@ export default {
                     return this.handleGLLMRequest(request, env);
                 }else if(url.pathname.startsWith("/notion-api")){
                     return this.handleNotionRequest(request, env);
+                }else if(url.pathname.startsWith("/proxy")){
+                    return this.handleProxyRequest(request, env);
                 }
                 return new Response("Not found", { status: 404 });
         }
@@ -60,6 +62,15 @@ export default {
                             + url.pathname.replace('/gllm', '') + url.search;
     
         return proxyRequest(request,targetUrl, "Failed to proxy GLLM request");
+    },
+
+    async handleProxyRequest(request: Request, _env: Env): Promise<Response> {
+        const url = new URL(request.url);
+        const targetUrl = url.searchParams.get('url');
+        if (!targetUrl) {
+            return new Response("Missing proxy url parameter", { status: 400 });
+        }
+        return proxyRequest(request,targetUrl, "Failed to proxy request");
     },
 
     async handleNotionRequest(request: Request, _env: Env): Promise<Response> {

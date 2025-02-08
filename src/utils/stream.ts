@@ -90,6 +90,4 @@ class SSEDecoderStream extends TransformStream<string, string>{
             controller.enqueue(this.buffer);
         }
     }
-
-
 }
