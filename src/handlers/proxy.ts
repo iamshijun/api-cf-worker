@@ -7,7 +7,10 @@ export async function proxyRequest(request: Request, targetUrl: string,
         // 构建新的请求
         const newHeaders = new Headers(request.headers);
         newHeaders.delete('Host');  // 删除原始的 Host 头
-
+        newHeaders.delete('cf-connecting-ip');  // 删除 CF 的客户端 IP 头
+        newHeaders.delete('x-real-ip');        // 删除真实 IP 头
+        newHeaders.delete('x-forwarded-for');  // 删除转发 IP 头
+        
         const newRequest = new Request(targetUrl, {
             method: request.method,
             headers: newHeaders,
