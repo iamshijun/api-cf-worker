@@ -25,6 +25,8 @@ export default {
         }
 
         switch (url.pathname) {
+            case "/ip":
+                return this.handleIpRequest(request);
             case "/oauth/authorize":
                 return this.handleAuthorize(url, env);
             case "/oauth/token":
@@ -54,6 +56,23 @@ export default {
                 "Access-Control-Allow-Headers": requestHeaders,
             },
         });
+    },
+    async handleIpRequest(_request: Request): Promise<Response> {
+        const response = await fetch( new Request("https://ipinfo.io/json",{
+            method: "GET"
+        }))
+        
+        const responseHeaders = new Headers(response.headers);
+        if (!responseHeaders.has('Access-Control-Allow-Origin')) { //保证不会设置多个Access-Control-Allow-Origin
+            responseHeaders.set('Access-Control-Allow-Origin', '*');
+        }
+        
+        return new Response(response.body, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: responseHeaders
+        });
+    
     },
 
     async handleGLLMRequest(request: Request, _env: Env): Promise<Response> {
