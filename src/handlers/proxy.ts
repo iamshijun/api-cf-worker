@@ -1,4 +1,4 @@
-import { creastreteStreamProcessor, isEventStream } from "../utils/stream";
+import { creastreteStreamProcessor, isEventStream } from "../utils/stream.ts";
 
 
 export async function proxyRequest(request: Request, targetUrl: string, 

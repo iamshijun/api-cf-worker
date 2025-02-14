@@ -1,0 +1,10 @@
+{
+    "tasks": {
+      "start": "deno run --allow-net --allow-read deno.ts"
+    },
+    "deploy": {
+      "project": "derneid-api", 
+      "exclude": ["node_modules"],
+      "entrypoint": "deno.ts"
+    }
+  }

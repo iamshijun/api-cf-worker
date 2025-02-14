@@ -20,5 +20,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["worker-configuration.d.ts", "src/**/*.ts"]
+  "include": ["worker-configuration.d.ts", "src/**/*.ts", "deno.ts"]
 }
