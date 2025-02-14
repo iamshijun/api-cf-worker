@@ -1,4 +1,4 @@
-import { creastreteStreamProcessor, isEventStream } from "../utils/stream.ts";
+import { creastreteStreamProcessor, isEventStream } from "../utils/stream.ts";//deno 要指定后缀名?
 
 
 export async function proxyRequest(request: Request, targetUrl: string, 

@@ -72,6 +72,14 @@ async function handleNotionRequest(request: Request, _env: Env): Promise<Respons
     return response;
 } 
 
+async function handleShonagonRequest(request: Request, _env: Env): Promise<Response> {
+    const url = new URL(request.url);
+    const targetUrl = 'https://shonagon.ninjal.ac.jp/api/' 
+                        + url.pathname.replace('/shonagon-api', '') + url.search;
+
+    return proxyRequest(request,targetUrl, "Failed to proxy Shonagon request");
+}
+
 async function handleAuthorize(url: URL, env: Env): Promise<Response> {
     const response_type = url.searchParams.get('response_type') ?? 'code' //code,token,..
     const scope = url.searchParams.get('scope') ?? 'basic,netdisk'
@@ -228,6 +236,8 @@ export default {
                     return handleGLLMRequest(request, env);
                 }else if(url.pathname.startsWith("/notion-api")){
                     return handleNotionRequest(request, env);
+                }else if(url.pathname.startsWith("/shonagon-api")){
+                    return handleShonagonRequest(request, env);
                 }else if(url.pathname.startsWith("/proxy")){
                     return handleProxyRequest(request, env);
                 }
