@@ -16,7 +16,7 @@ interface TokenResponse {
 }
 
 async function handleIpRequest(_request: Request): Promise<Response> {
-    const response = await fetch( new Request("https://ipinfo.io/json",{
+    const response = await fetch(new Request("https://ipinfo.io/json",{
         method: "GET"
     }))
     
@@ -46,10 +46,15 @@ function handleCorsPreflightRequest(request: Request): Response {
 }
 
 async function handleGLLMRequest(request: Request, _env: Env): Promise<Response> {
+
     const url = new URL(request.url);
     const targetUrl = 'https://generativelanguage.googleapis.com' 
-                        + url.pathname.replace('/gllm', '') + url.search;
+                            + url.pathname.replace('/gllm', '') + url.search;
 
+    const upgradeHeader = request.headers.get('Upgrade');
+    if (upgradeHeader?.toLowerCase() === 'websocket') {
+        return handleWebSocketRequest(request, targetUrl) //这里会将https转为wss的
+    }
     return proxyRequest(request,targetUrl, "Failed to proxy GLLM request");
 }
 
@@ -240,9 +245,114 @@ export default {
                     return handleShonagonRequest(request, env);
                 }else if(url.pathname.startsWith("/proxy")){
                     return handleProxyRequest(request, env);
+                }else if(url.pathname.startsWith("/ws")){
+                    return handleWebSocketRequest(request)
+                }else {// "/"
+                    const xProxyHost = request.headers.get('X-Proxy-For')
+                    if(xProxyHost){
+                        const newHeaders = new Headers(request.headers)
+                        newHeaders.delete('X-Proxy-For')
+                        return handleProxyRequest(new Request(xProxyHost + url.pathname + url.search,{
+                            method: request.method,
+                            headers: newHeaders,
+                            body: request.body,
+                        }), env)
+                    }
                 }
                 return new Response("Not found", { status: 404 });
         }
     }
 
 };
+
+async function handleWebSocketRequest(request: Request,proxyUrl?:string): Promise<Response> {
+    const url = new URL(request.url);
+    const upgradeHeader = request.headers.get('Upgrade');
+    if (!upgradeHeader || upgradeHeader.toLowerCase() !== 'websocket') {
+        return new Response('Expected Upgrade: websocket', { status: 426 });
+    }
+
+    //如果没有指定proxyUrl 从请求中获取目标WebSocket服务器地址
+    let targetUrl = proxyUrl ?? url.searchParams.get('url');
+    // if (!targetUrl) {
+    //     return new Response('Missing target WebSocket URL', { status: 400 });
+    // }
+    if(!targetUrl){ //default target setting
+        targetUrl = 'wss://www.asitanokibou.site/ws'
+    }
+
+    if (targetUrl.startsWith('http://')) {
+        targetUrl = targetUrl.replace('http://', 'ws://');
+    } else if (targetUrl.startsWith('https://')) {
+        targetUrl = targetUrl.replace('https://', 'wss://');
+    } else if (!targetUrl.startsWith('ws://') && !targetUrl.startsWith('wss://')) {
+        targetUrl = 'wss://' + targetUrl;
+    }
+    console.log('targetUrl:' + targetUrl)
+
+    try {
+        const webSocketPair = new WebSocketPair();
+        const [client, server] = Object.values(webSocketPair);
+
+        // 连接到目标WebSocket服务器
+        
+        const targetWebSocket = await new Promise<WebSocket>((resolve, reject) => {
+            const ws = new WebSocket(targetUrl);
+            ws.addEventListener('open', () => {
+                console.log('Successfully connected to target WebSocket server');
+                resolve(ws);
+            });
+            
+            ws.addEventListener('error', (error) => {
+                console.error('Failed to connect to target WebSocket server:', error);
+                reject(error);
+            });
+             // 处理目标服务器消息并转发到客户端
+            ws.addEventListener('message', (event) => {
+                //console.log('receive message from target: ',event.data)
+                if (server.readyState === WebSocket.OPEN) {
+                    server.send(event.data);
+                }
+            });
+            ws.addEventListener('close', (event) => {
+                console.log('-------------targetWebSocket close-----------------');
+                if (server.readyState === WebSocket.OPEN) {
+                    server.close(event.code, event.reason);
+                }
+            });
+        }); 
+       
+
+        // 处理客户端消息并转发到目标服务器
+        server.accept();
+        server.addEventListener('message', async (event) => {
+           // console.log('receive message from client: ' , event.data)
+            if (targetWebSocket.readyState === WebSocket.OPEN) {
+                try {
+                    targetWebSocket.send(event.data);
+                }catch(error:any){
+                    console.error('Failed to send message to target WebSocket server:', error);
+                }
+            }
+            if (event.data === 'close') {
+                server.close();
+            }
+        });
+
+        // 处理连接关闭
+        server.addEventListener('close', (event) => {
+           // console.log('-------------server close-----------------');
+            if (targetWebSocket.readyState === WebSocket.OPEN) {
+                targetWebSocket.close(event.code, event.reason);
+            }
+        });
+   
+
+        return new Response(null, {
+            status: 101,
+            webSocket: client,
+        });
+    } catch (error) {
+        return handleError('Failed to establish WebSocket connection', error);
+    }
+}
