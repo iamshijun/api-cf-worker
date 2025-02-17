@@ -8,6 +8,9 @@ kv_namespaces = [
   { binding = "OAUTH_STORE", id = "d01dc81d05134974a18a03129e7c5470", preview_id = "c601ff5be7ea40ff9a7ae183a0f621cd"}, 
 ]
 
+[observability]
+enabled = true
+head_sampling_rate = 1 
 
 [[routes]]  
 pattern = "api.asitanokibou.site"
