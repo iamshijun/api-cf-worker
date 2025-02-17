@@ -5,6 +5,7 @@ interface Env {
     BDPAN_APP_KEY: string;
     BDPAN_APP_SECRET: string;
     BDPAN_REDIRECT_URI: string;
+    DEFAULT_WS_TARGET: string;
 }
 
 interface TokenResponse {
@@ -45,7 +46,7 @@ function handleCorsPreflightRequest(request: Request): Response {
     });
 }
 
-async function handleGLLMRequest(request: Request, _env: Env): Promise<Response> {
+async function handleGLLMRequest(request: Request, env: Env): Promise<Response> {
 
     const url = new URL(request.url);
     const targetUrl = 'https://generativelanguage.googleapis.com' 
@@ -53,7 +54,7 @@ async function handleGLLMRequest(request: Request, _env: Env): Promise<Response>
 
     const upgradeHeader = request.headers.get('Upgrade');
     if (upgradeHeader?.toLowerCase() === 'websocket') {
-        return handleWebSocketRequest(request, targetUrl) //这里会将https转为wss的
+        return handleWebSocketRequest(request, env, targetUrl) //这里会将https转为wss的
     }
     return proxyRequest(request,targetUrl, "Failed to proxy GLLM request");
 }
@@ -246,7 +247,7 @@ export default {
                 }else if(url.pathname.startsWith("/proxy")){
                     return handleProxyRequest(request, env);
                 }else if(url.pathname.startsWith("/ws")){
-                    return handleWebSocketRequest(request)
+                    return handleWebSocketRequest(request,env)
                 }else {// "/"
                     const xProxyHost = request.headers.get('X-Proxy-For')
                     if(xProxyHost){
@@ -265,7 +266,7 @@ export default {
 
 };
 
-async function handleWebSocketRequest(request: Request,proxyUrl?:string): Promise<Response> {
+async function handleWebSocketRequest(request: Request,env:Env,proxyUrl?:string): Promise<Response> {
     const url = new URL(request.url);
     const upgradeHeader = request.headers.get('Upgrade');
     if (!upgradeHeader || upgradeHeader.toLowerCase() !== 'websocket') {
@@ -274,12 +275,12 @@ async function handleWebSocketRequest(request: Request,proxyUrl?:string): Promis
 
     //如果没有指定proxyUrl 从请求中获取目标WebSocket服务器地址
     let targetUrl = proxyUrl ?? url.searchParams.get('url');
+    if(!targetUrl){ 
+        targetUrl =  env.DEFAULT_WS_TARGET ?? 'wss://www.asitanokibou.site/ws'
+    }
     // if (!targetUrl) {
     //     return new Response('Missing target WebSocket URL', { status: 400 });
     // }
-    if(!targetUrl){ //default target setting
-        targetUrl = 'wss://www.asitanokibou.site/ws'
-    }
 
     if (targetUrl.startsWith('http://')) {
         targetUrl = targetUrl.replace('http://', 'ws://');

@@ -2,7 +2,7 @@ import worker from "./src/worker.ts";
 
 // ... existing code ...
 
-function handleWebSocketRequest(request: Request, proxyUrl?: string): Response {
+async function handleWebSocketRequest(request: Request, proxyUrl?: string): Promise<Response> {
     const url = new URL(request.url);
     const upgradeHeader = request.headers.get('Upgrade');
     if (!upgradeHeader || upgradeHeader.toLowerCase() !== 'websocket') {
@@ -12,7 +12,7 @@ function handleWebSocketRequest(request: Request, proxyUrl?: string): Response {
     // 获取目标 WebSocket 服务器地址
     let targetUrl = proxyUrl ?? url.searchParams.get('url');
     if (!targetUrl) {
-        targetUrl = 'wss://www.asitanokibou.site/ws'; // 默认目标
+        targetUrl = Deno.env.get("DEFAULT_WS_TARGET") ?? 'wss://www.asitanokibou.site/ws';
     }
 
     // 转换协议
@@ -26,18 +26,48 @@ function handleWebSocketRequest(request: Request, proxyUrl?: string): Response {
     console.log('targetUrl:', targetUrl);
 
     try {
-        // 创建到目标服务器的 WebSocket 连接
-        const targetWs = new WebSocket(targetUrl);
-        
         // 使用 Deno 的 WebSocket 升级
         const { socket: clientWs, response } = Deno.upgradeWebSocket(request);
 
-        // 处理目标服务器消息
-        targetWs.onmessage = (event) => {
-            if (clientWs.readyState === WebSocket.OPEN) {
-                clientWs.send(event.data);
-            }
-        };
+        // 创建到目标服务器的 WebSocket 连接
+        const targetWs = await new Promise<WebSocket>((resolve, reject) => {
+            const target = new WebSocket(targetUrl);
+            let isConnected = false
+            target.addEventListener("open", () => {
+                console.log('Successfully connected to target WebSocket server');
+                isConnected = true;
+                resolve(target);
+            })
+            target.addEventListener("error", (event) => {//ErrorEvent
+                if(isConnected){
+                    const errorEvent = event as ErrorEvent
+                    console.error('Target WebSocket error:', errorEvent.error)
+                    return;
+                }
+                console.error('Failed to connect to target WebSocket server');
+                reject(event);
+            })
+
+            // 处理目标服务器消息
+            target.onmessage = (event) => {
+                if (clientWs.readyState === WebSocket.OPEN) {
+                    clientWs.send(event.data);
+                }
+            };
+            // 错误处理
+            target.onerror = (error) => {
+                console.error('Target WebSocket error:', error);
+                //clientWs.close();
+            };
+
+            target.onclose = (event) => {
+                console.log('Target WebSocket closed');
+                if (clientWs.readyState === WebSocket.OPEN) {
+                    clientWs.close(event.code, event.reason);
+                }
+            };
+        })
+      
 
         // 处理客户端消息
         clientWs.onmessage = (event) => {
@@ -49,25 +79,10 @@ function handleWebSocketRequest(request: Request, proxyUrl?: string): Response {
             }
         };
 
-        // 错误处理
-        targetWs.onerror = (error) => {
-            console.error('Target WebSocket error:', error);
-            clientWs.close();
-        };
-
         clientWs.onerror = (error) => {
             console.error('Client WebSocket error:', error);
             targetWs.close();
         };
-
-        // 关闭处理
-        targetWs.onclose = (event) => {
-            console.log('Target WebSocket closed');
-            if (clientWs.readyState === WebSocket.OPEN) {
-                clientWs.close(event.code, event.reason);
-            }
-        };
-
         clientWs.onclose = (event) => {
             console.log('Client WebSocket closed');
             if (targetWs.readyState === WebSocket.OPEN) {
