@@ -86,6 +86,13 @@ async function handleShonagonRequest(request: Request, _env: Env): Promise<Respo
     return proxyRequest(request,targetUrl, "Failed to proxy Shonagon request");
 }
 
+async function handleVPSRequest(request: Request, _env: Env): Promise<Response> {
+    const url = new URL(request.url);
+    const targetUrl = 'https://www.asitanokibou.site/' + url.pathname + url.search;
+
+    return proxyRequest(request,targetUrl, "Failed to proxy Shonagon request");
+}
+
 async function handleAuthorize(url: URL, env: Env): Promise<Response> {
     const response_type = url.searchParams.get('response_type') ?? 'code' //code,token,..
     const scope = url.searchParams.get('scope') ?? 'basic,netdisk'
@@ -246,6 +253,8 @@ export default {
                     return handleShonagonRequest(request, env);
                 }else if(url.pathname.startsWith("/proxy")){
                     return handleProxyRequest(request, env);
+                }else if(url.pathname.startsWith("/jws")){
+                    return handleVPSRequest(request,env)
                 }else if(url.pathname.startsWith("/ws")){
                     return handleWebSocketRequest(request,env)
                 }else {// "/"
