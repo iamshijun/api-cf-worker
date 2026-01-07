@@ -17,7 +17,12 @@ pattern = "api.asitanokibou.site"
 custom_domain = true
 zone_id = "578ea85456cdce1b241ad8584a088313"
 
+[[routes]]  
+pattern = "api.asitanokibou.xyz"
+custom_domain = true
+zone_id = "55fea92d37a88744f6e4aeb688d4ab83"
+
 
 [vars]
-BDPAN_REDIRECT_URI = "https://v.asitanokibou.site/yunpan/authorized"
-DEFAULT_WS_TARGET = 'wss://www.asitanokibou.site/ws'
+BDPAN_REDIRECT_URI = "https://v.asitanokibou.xyz/yunpan/authorized"
+DEFAULT_WS_TARGET = 'wss://www.asitanokibou.xyz/ws'

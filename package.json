@@ -8,7 +8,8 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "start": "wrangler dev",
-    "deploy": "wrangler publish"
+    "deploy:cloudflare": "wrangler publish",
+    "deploy:deno": "deployctl deploy"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250204.0",

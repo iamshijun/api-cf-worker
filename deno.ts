@@ -12,7 +12,7 @@ async function handleWebSocketRequest(request: Request, proxyUrl?: string): Prom
     // 获取目标 WebSocket 服务器地址
     let targetUrl = proxyUrl ?? url.searchParams.get('url');
     if (!targetUrl) {
-        targetUrl = Deno.env.get("DEFAULT_WS_TARGET") ?? 'wss://www.asitanokibou.site/ws';
+        targetUrl = Deno.env.get("DEFAULT_WS_TARGET") ?? 'wss://www.asitanokibou.xyz/ws';
     }
 
     // 转换协议

@@ -88,7 +88,7 @@ async function handleShonagonRequest(request: Request, _env: Env): Promise<Respo
 
 async function handleVPSRequest(request: Request, _env: Env): Promise<Response> {
     const url = new URL(request.url);
-    const targetUrl = 'https://www.asitanokibou.site/' + url.pathname + url.search;
+    const targetUrl = 'https://www.asitanokibou.xyz/' + url.pathname + url.search;
 
     return proxyRequest(request,targetUrl, "Failed to proxy Shonagon request");
 }
@@ -285,7 +285,7 @@ async function handleWebSocketRequest(request: Request,env:Env,proxyUrl?:string)
     //如果没有指定proxyUrl 从请求中获取目标WebSocket服务器地址
     let targetUrl = proxyUrl ?? url.searchParams.get('url');
     if(!targetUrl){ 
-        targetUrl =  env.DEFAULT_WS_TARGET ?? 'wss://www.asitanokibou.site/ws'
+        targetUrl =  env.DEFAULT_WS_TARGET ?? 'wss://www.asitanokibou.xyz/ws'
     }
     // if (!targetUrl) {
     //     return new Response('Missing target WebSocket URL', { status: 400 });
